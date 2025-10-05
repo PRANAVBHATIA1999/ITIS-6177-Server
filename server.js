@@ -16,6 +16,13 @@ const pool = mariadb.createPool({
   connectionLimit: 5,
 });
 
+const axios = require("axios");
+const FUNCTION_URL = 'https://avvialwywcmnky6lk3mnvy2bga0cvboo.lambda-url.us-east-1.on.aws/';
+if (!FUNCTION_URL) {
+  console.warn("Function URL not found!!");
+}
+
+
 app.use(express.json());
 
 async function q(sql, params = []) {
@@ -255,6 +262,30 @@ app.delete("/api/customers/:code", async (req, res, next) => {
     res.status(204).send();
   } catch (e) { next(e); }
 });
+
+// ---- SAY (bridge to AWS Lambda)
+app.get("/say", async (req, res, next) => {
+  try {
+    const keyword = String(req.query.keyword ?? "").trim();
+    if (!keyword) {
+      return res.status(400).type("text/plain").send("Missing required query parameter: keyword");
+    }
+    if (!FUNCTION_URL) {
+      return res.status(500).type("text/plain").send("Server not configured: SAY_FUNCTION_URL is missing");
+    }
+
+    const url = `${FUNCTION_URL}?keyword=${encodeURIComponent(keyword)}`;
+    const r = await axios.get(url, { responseType: "text", timeout: 5000 });
+    res.status(200).type("text/plain").send(r.data);
+  } catch (err) {
+    if (err.response) {
+      return res.status(err.response.status || 502).type("text/plain")
+        .send(String(err.response.data || "Upstream error"));
+    }
+    next(err);
+  }
+});
+
 
 // error handler
 app.use((err, _req, res, _next) => {
