@@ -480,9 +480,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   }
 }));
 
-app.listen(port, () => {
-  console.log(`API listening at http://localhost:${port}`);
-  console.log(`Swagger UI: http://localhost:${port}/api-docs`);
-  console.log(`OpenAPI JSON: http://localhost:${port}/openapi.json`);
+app.listen(3000, "0.0.0.0", () => {
+  console.log("API listening at http://0.0.0.0:3000");
 });
 
